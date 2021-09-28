@@ -26,7 +26,7 @@ export interface CreateProductCardProps {
 
 interface CreateNewPageProps {
   pdfDoc: PDFDocument;
-  currentPage: number;
+  currentPageIndex: number;
   products: Product[];
 }
 export type CreateNewPage = (props: CreateNewPageProps) => PDFPage;

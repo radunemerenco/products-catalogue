@@ -130,19 +130,30 @@ export default function App() {
       console.log({rowsInPage, columnsInPage});
 
       // Draw horizontal lines
+      const horizontalLinesInPage = rowsInPage + 1;
       Array.from({
-        length: GRID_ITEMS.VERTICAL + 1
+        length: horizontalLinesInPage
       }).map((_, index) => {
+        const isFirstHorizontalLine = index === horizontalLinesInPage - 1;
+        const isLastHorizontalLine = index === 0;
+
+
+        const isLinePartialWidth = (rowsInPage === 1 && isFirstHorizontalLine) || isLastHorizontalLine
+
+        let columnsInRow = isLinePartialWidth
+          ? (itemsInPage % GRID_ITEMS.HORIZONTAL || GRID_ITEMS.HORIZONTAL)
+          : GRID_ITEMS.HORIZONTAL;
+
         page.drawLine({
           start: {
-            x:
-              cardDimensions.width * GRID_ITEMS.HORIZONTAL +
-              PAGE_PADDING.LEFT,
-            y: index * cardDimensions.height + PAGE_PADDING.BOTTOM
+            x: PAGE_PADDING.LEFT,
+            y: ((GRID_ITEMS.VERTICAL - rowsInPage) + index) * cardDimensions.height + PAGE_PADDING.BOTTOM
           },
           end: {
-            x: PAGE_PADDING.LEFT,
-            y: index * cardDimensions.height + PAGE_PADDING.BOTTOM
+            x:
+              cardDimensions.width * columnsInRow +
+              PAGE_PADDING.LEFT,
+            y: ((GRID_ITEMS.VERTICAL - rowsInPage) + index) * cardDimensions.height + PAGE_PADDING.BOTTOM
           },
           thickness: 2,
           color: rgb(0, 0, 0),
@@ -151,9 +162,14 @@ export default function App() {
       });
 
       // Draw vertical lines
+      const verticalLinesInPage = (itemsInPage > GRID_ITEMS.HORIZONTAL ? GRID_ITEMS.HORIZONTAL : itemsInPage) + 1;
       Array.from({
-        length: GRID_ITEMS.HORIZONTAL + 1
+        length: verticalLinesInPage
       }).map((_, index) => {
+        const rowsInPage = Math.ceil(itemsInPage / GRID_ITEMS.HORIZONTAL);
+        const isFullHeight = index <= (itemsInPage % GRID_ITEMS.HORIZONTAL);
+        const rowsInColumn = isFullHeight ? rowsInPage : rowsInPage - 1
+
         page.drawLine({
           start: {
             x: index * cardDimensions.width + PAGE_PADDING.LEFT,
@@ -163,7 +179,7 @@ export default function App() {
           },
           end: {
             x: index * cardDimensions.width + PAGE_PADDING.LEFT,
-            y: PAGE_PADDING.BOTTOM
+            y: cardDimensions.height * (GRID_ITEMS.VERTICAL - rowsInColumn) + PAGE_PADDING.BOTTOM
           },
           thickness: 2,
           color: rgb(0, 0, 0),
@@ -174,7 +190,7 @@ export default function App() {
 
     const createNewPage: CreateNewPage = ({
       pdfDoc,
-      currentPage,
+      currentPageIndex,
       products
     }) => {
       const page = pdfDoc.addPage();
@@ -183,7 +199,7 @@ export default function App() {
 
       const totalPages = Math.floor(products.length / ITEMS_PER_PAGE);
       const itemsInPage =
-        currentPage !== totalPages
+        currentPageIndex !== totalPages
           ? ITEMS_PER_PAGE
           : products.length % ITEMS_PER_PAGE;
       drawProductsGrid({ page, itemsInPage });
@@ -207,13 +223,13 @@ export default function App() {
       let page: PDFPage | null = null;
 
       console.log({ ITEMS_PER_PAGE });
-      const promises = await products.map(async (product, index) => {
+      const promises: Promise<void>[] = await products.map(async (product, index) => {
         const currentIndex = index % ITEMS_PER_PAGE;
-        const currentPage = Math.floor(index / ITEMS_PER_PAGE);
+        const currentPageIndex = Math.floor(index / ITEMS_PER_PAGE);
         // console.log({
-        //   currentPage,
+        //   currentPageIndex,
         //   currentIndex,
-        //   currentPage12: pages[currentPage],
+        //   currentPage12: pages[currentPageIndex],
         //   pages,
         //   product: product.name
         // });
@@ -221,7 +237,7 @@ export default function App() {
         if (!currentIndex) {
           page = createNewPage({
             pdfDoc,
-            currentPage,
+            currentPageIndex,
             products
           });
         }
@@ -235,7 +251,7 @@ export default function App() {
           Math.floor(currentIndex / GRID_ITEMS.HORIZONTAL) + 1;
 
         // if (currentIndex === 0 && index !== 0) {
-        //   page = await createNewPage({ pdfDoc, currentPage, products });
+        //   page = await createNewPage({ pdfDoc, currentPageIndex, products });
         // }
 
         await createProductCard({
