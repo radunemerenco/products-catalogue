@@ -186,8 +186,10 @@ export default function App() {
         length: verticalLinesInPage
       }).map((_, index) => {
         const rowsInPage = Math.ceil(itemsInPage / GRID_ITEMS.HORIZONTAL);
-        const isFullHeight = index <= (itemsInPage % GRID_ITEMS.HORIZONTAL);
-        const rowsInColumn = isFullHeight ? rowsInPage : rowsInPage - 1
+        const isFullHeight = index <= ((itemsInPage % GRID_ITEMS.HORIZONTAL) || GRID_ITEMS.HORIZONTAL);
+        const rowsInColumn = isFullHeight ? rowsInPage : rowsInPage - 1;
+
+        console.log({rowsInPage, isFullHeight, rowsInColumn})
 
         page.drawLine({
           start: {
