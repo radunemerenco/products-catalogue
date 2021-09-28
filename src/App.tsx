@@ -208,25 +208,39 @@ export default function App() {
       const pdfDoc = await PDFDocument.create();
       // page.drawText("You can create PDFssss!");
 
-      let page = await createNewPage({ pdfDoc, currentPage: 0, products });
+      const pages: PDFPage[] = [];
 
-      const cardDimensions = getCardDimensions({ page });
-
-      const promises = products.map(async (product, index) => {
+      console.log({ ITEMS_PER_PAGE });
+      const promises = await products.map(async (product, index) => {
         const currentIndex = index % ITEMS_PER_PAGE;
         const currentPage = Math.floor(index / ITEMS_PER_PAGE);
+        console.log({
+          currentPage,
+          currentIndex,
+          currentPage12: pages[currentPage],
+          pages
+        });
+
+        if (!pages[currentPage]) {
+          pages[currentPage] = await createNewPage({
+            pdfDoc,
+            currentPage,
+            products
+          });
+        }
+        const cardDimensions = getCardDimensions({ page: pages[currentPage] });
 
         const currentHorizontalIndex = currentIndex % GRID_ITEMS.HORIZONTAL;
         const currentVerticalIndex =
           Math.floor(currentIndex / GRID_ITEMS.HORIZONTAL) + 1;
 
-        if (currentIndex === 0 && index !== 0) {
-          page = await createNewPage({ pdfDoc, currentPage, products });
-        }
+        // if (currentIndex === 0 && index !== 0) {
+        //   page = await createNewPage({ pdfDoc, currentPage, products });
+        // }
 
         await createProductCard({
           pdfDoc,
-          page,
+          page: pages[currentPage],
           startCoordinates: {
             x:
               cardDimensions.width * currentHorizontalIndex + PAGE_PADDING.LEFT,
