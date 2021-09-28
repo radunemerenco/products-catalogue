@@ -29,7 +29,7 @@ interface CreateNewPageProps {
   currentPage: number;
   products: Product[];
 }
-export type CreateNewPage = (props: CreateNewPageProps) => Promise<PDFPage>;
+export type CreateNewPage = (props: CreateNewPageProps) => PDFPage;
 
 interface GetCardDimensionsProps {
   page: PDFPage;
@@ -40,4 +40,4 @@ interface DrawProductsGridProps {
   page: PDFPage;
   itemsInPage: number;
 }
-export type DrawProductsGrid = (props: DrawProductsGridProps) => Promise<void>;
+export type DrawProductsGrid = (props: DrawProductsGridProps) => void;
