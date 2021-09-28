@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PDFDocument, rgb } from "pdf-lib";
+import {PDFDocument, rgb, StandardFonts} from "pdf-lib";
 import type { PDFPage } from "pdf-lib";
 // import { decode } from "base64-arraybuffer";
 import {
@@ -42,6 +42,7 @@ export default function App() {
     const createProductCard = async ({
       pdfDoc,
       page,
+      font,
       startCoordinates,
       product,
       cardDimensions
@@ -96,7 +97,7 @@ export default function App() {
 
       const lineHeight = getResponsiveDimension(15, page);
 
-      const productNameYPostition =
+      const productNameYPosition =
         topStartCoordinates.y -
         imageDimensions.height -
         cardPaddings -
@@ -105,8 +106,26 @@ export default function App() {
 
       page.drawText(product.name, {
         x: topStartCoordinates.x + cardPaddings,
-        y: productNameYPostition,
+        y: productNameYPosition,
         // font: timesRomanFont,
+        size: getResponsiveDimension(12, page),
+        color: rgb(0, 0, 0),
+        lineHeight
+      });
+
+      const productQuantityString = product.quantity > 1 ? product.quantity : '';
+
+      const priceLabel = `${product.price} ${product.currency}/${productQuantityString}${product.unitType}`
+
+      const textWidth = font.widthOfTextAtSize(
+        priceLabel,
+        getResponsiveDimension(12, page)
+      );
+
+      page.drawText(priceLabel, {
+        x: startCoordinates.x - cardPaddings + cardDimensions.width - textWidth,
+        y:  startCoordinates.y + cardPaddings,
+        font,
         size: getResponsiveDimension(12, page),
         color: rgb(0, 0, 0),
         lineHeight
@@ -219,6 +238,7 @@ export default function App() {
       // PDF Creation
       const pdfDoc = await PDFDocument.create();
       // page.drawText("You can create PDFssss!");
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
       let page: PDFPage | null = null;
 
@@ -237,6 +257,7 @@ export default function App() {
         if (!currentIndex) {
           page = createNewPage({
             pdfDoc,
+            font: fontRegular,
             currentPageIndex,
             products
           });
@@ -257,6 +278,7 @@ export default function App() {
         await createProductCard({
           pdfDoc,
           page,
+          font: fontRegular,
           startCoordinates: {
             x:
               cardDimensions.width * currentHorizontalIndex + PAGE_PADDING.LEFT,
