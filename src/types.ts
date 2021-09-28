@@ -1,4 +1,4 @@
-import {PDFDocument, PDFFont, PDFPage} from "pdf-lib";
+import {PDFDocument, PDFFont, PDFPage, StandardFonts} from "pdf-lib";
 
 export interface StartCoordinates {
   x: number;
@@ -20,10 +20,14 @@ export interface Product {
   unitType: string;
 }
 
+export type Fonts = Partial<{
+  [key in StandardFonts]: PDFFont
+}>
+
 export interface CreateProductCardProps {
   pdfDoc: PDFDocument;
   page: PDFPage;
-  font: PDFFont;
+  fonts: Fonts;
   startCoordinates: StartCoordinates;
   product: Product;
   cardDimensions: Dimensions;
@@ -33,7 +37,7 @@ interface CreateNewPageProps {
   pdfDoc: PDFDocument;
   currentPageIndex: number;
   products: Product[];
-  font: PDFFont;
+  fonts: Fonts;
 }
 export type CreateNewPage = (props: CreateNewPageProps) => PDFPage;
 

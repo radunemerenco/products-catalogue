@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import {PDFDocument, rgb, StandardFonts} from "pdf-lib";
+import {PDFDocument, PDFFont, rgb, StandardFonts} from "pdf-lib";
 import type { PDFPage } from "pdf-lib";
 // import { decode } from "base64-arraybuffer";
 import {
   CreateProductCardProps,
   CreateNewPage,
   GetCardDimensions,
-  DrawProductsGrid
+  DrawProductsGrid, Fonts
 } from "./types";
 
 import "./styles.css";
@@ -42,7 +42,7 @@ export default function App() {
     const createProductCard = async ({
       pdfDoc,
       page,
-      font,
+      fonts,
       startCoordinates,
       product,
       cardDimensions
@@ -117,15 +117,15 @@ export default function App() {
 
       const priceLabel = `${product.price} ${product.currency}/${productQuantityString}${product.unitType}`
 
-      const textWidth = font.widthOfTextAtSize(
+      const textWidth = fonts["Helvetica-Bold"]?.widthOfTextAtSize(
         priceLabel,
         getResponsiveDimension(12, page)
-      );
+      ) || 0;
 
       page.drawText(priceLabel, {
         x: startCoordinates.x - cardPaddings + cardDimensions.width - textWidth,
         y:  startCoordinates.y + cardPaddings,
-        font,
+        font: fonts["Helvetica-Bold"],
         size: getResponsiveDimension(12, page),
         color: rgb(0, 0, 0),
         lineHeight
@@ -212,11 +212,16 @@ export default function App() {
     const createNewPage: CreateNewPage = ({
       pdfDoc,
       currentPageIndex,
-      products
+      products,
+      fonts
     }) => {
       const page = pdfDoc.addPage();
       page.setWidth(595);
       page.setHeight(842);
+
+      if (fonts.Helvetica) {
+        page.setFont(fonts.Helvetica)
+      }
 
       const totalPages = Math.floor(products.length / ITEMS_PER_PAGE);
       const itemsInPage =
@@ -240,7 +245,10 @@ export default function App() {
       // PDF Creation
       const pdfDoc = await PDFDocument.create();
       // page.drawText("You can create PDFssss!");
-      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fonts: Fonts = {
+        [StandardFonts.Helvetica]: await pdfDoc.embedFont(StandardFonts.Helvetica),
+        [StandardFonts.HelveticaBold]: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
+      }
 
       let page: PDFPage | null = null;
 
@@ -259,7 +267,7 @@ export default function App() {
         if (!currentIndex) {
           page = createNewPage({
             pdfDoc,
-            font: fontRegular,
+            fonts,
             currentPageIndex,
             products
           });
@@ -280,7 +288,7 @@ export default function App() {
         await createProductCard({
           pdfDoc,
           page,
-          font: fontRegular,
+          fonts,
           startCoordinates: {
             x:
               cardDimensions.width * currentHorizontalIndex + PAGE_PADDING.LEFT,
