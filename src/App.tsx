@@ -6,12 +6,13 @@ import {
   CreateProductCardProps,
   CreateNewPage,
   GetCardDimensions,
-  DrawProductsGrid, Fonts
+  DrawProductsGrid, Fonts, DrawPageHeader, StartCoordinates
 } from "./types";
 
 import "./styles.css";
 import PdfViewer from "./PdfViewer";
 import products from "./resources/products";
+import merchant from "./resources/merchant";
 
 const BASE_PAGE_WIDTH = 595;
 const PRODUCT_CARD_WIDTH = 185;
@@ -27,6 +28,12 @@ const GRID_ITEMS = {
   VERTICAL: 5
 };
 const ITEMS_PER_PAGE = GRID_ITEMS.HORIZONTAL * GRID_ITEMS.VERTICAL;
+
+const COLORS = {
+  text: rgb(0.24, 0.24, 0.24),
+  accent: rgb(0.14, 0.47, 0.69),
+  grey: rgb(0.78, 0.78, 0.78)
+};
 
 const getResponsiveDimension = (dimension: number, page: PDFPage): number => {
   const pageWidth = page.getWidth();
@@ -109,7 +116,7 @@ export default function App() {
         y: productNameYPosition,
         // font: timesRomanFont,
         size: getResponsiveDimension(12, page),
-        color: rgb(0, 0, 0),
+        color: COLORS.text,
         lineHeight
       });
 
@@ -127,7 +134,7 @@ export default function App() {
         y:  startCoordinates.y + cardPaddings,
         font: fonts["Helvetica-Bold"],
         size: getResponsiveDimension(12, page),
-        color: rgb(0, 0, 0),
+        color: COLORS.text,
         lineHeight
       });
     };
@@ -139,8 +146,15 @@ export default function App() {
 
     const drawProductsGrid: DrawProductsGrid = ({
       page,
-      itemsInPage
+      products,
+      currentPageIndex,
     }) => {
+      const totalPages = Math.floor(products.length / ITEMS_PER_PAGE);
+      const itemsInPage =
+        currentPageIndex !== totalPages
+          ? ITEMS_PER_PAGE
+          : products.length % ITEMS_PER_PAGE;
+
       console.log({itemsInPage});
       const cardDimensions = getCardDimensions({page});
 
@@ -175,7 +189,7 @@ export default function App() {
             y: ((GRID_ITEMS.VERTICAL - rowsInPage) + index) * cardDimensions.height + PAGE_PADDING.BOTTOM
           },
           thickness: 2,
-          color: rgb(0, 0, 0),
+          color: COLORS.text,
           dashArray: [6, 6]
         });
       });
@@ -203,16 +217,151 @@ export default function App() {
             y: cardDimensions.height * (GRID_ITEMS.VERTICAL - rowsInColumn) + PAGE_PADDING.BOTTOM
           },
           thickness: 2,
-          color: rgb(0, 0, 0),
+          color: COLORS.text,
           dashArray: [6, 6]
         });
       })
     }
 
+    interface DrawPageMetaProps {
+      page: PDFPage,
+      fonts: Fonts,
+      startCoordinates: StartCoordinates;
+      label: string;
+      value: string;
+    }
+    type DrawPageMeta = (props: DrawPageMetaProps) => StartCoordinates;
+
+    const drawPageMeta: DrawPageMeta = ({
+      page,
+      fonts,
+      startCoordinates,
+      label,
+      value
+    }) => {
+      const labelFontSize = getResponsiveDimension(8, page);
+      const valueFontSize = getResponsiveDimension(14, page);
+      const labelTextHeight =  fonts["Helvetica"]?.heightAtSize(labelFontSize) || 0;
+      const valueTextHeight =  fonts["Helvetica-Bold"]?.heightAtSize(valueFontSize) || 0;
+      const labelBottomStartCoordinates = {
+        x: startCoordinates.x,
+        y: startCoordinates.y - labelTextHeight - getResponsiveDimension(20, page)
+      };
+      const valueBottomStartCoordinates = {
+        x: startCoordinates.x,
+        y: labelBottomStartCoordinates.y - valueTextHeight - getResponsiveDimension(3, page),
+      };
+
+      page.drawText(label, {
+        x: labelBottomStartCoordinates.x,
+        y: labelBottomStartCoordinates.y,
+        font: fonts.Helvetica,
+        size: labelFontSize,
+        color: COLORS.text,
+        lineHeight: labelFontSize * 1.725,
+      });
+
+      page.drawText(value, {
+        x: valueBottomStartCoordinates.x,
+        y: valueBottomStartCoordinates.y,
+        font: fonts["Helvetica-Bold"],
+        size: valueFontSize,
+        color: COLORS.text,
+        lineHeight: valueFontSize * 1.725,
+      });
+
+      return valueBottomStartCoordinates;
+    }
+
+    const drawPageHeader: DrawPageHeader = ({
+      page,
+      merchant,
+      fonts,
+    }) => {
+      // Draw page title
+      const pageTitleHeight =  fonts["Helvetica-Bold"]?.heightAtSize(
+        getResponsiveDimension(28, page)
+      ) || 0;
+      const leftAlignment = getResponsiveDimension(PAGE_PADDING.LEFT, page)
+      const titleTopAlignment = page.getSize().height - pageTitleHeight - getResponsiveDimension(PAGE_PADDING.TOP, page);
+      const titleLineHeight = getResponsiveDimension(32.81, page)
+
+      page.drawText('Product Catalog', {
+        x: leftAlignment,
+        y: titleTopAlignment,
+        font: fonts["Helvetica-Bold"],
+        size: getResponsiveDimension(28, page),
+        color: COLORS.accent,
+        lineHeight: titleLineHeight
+      });
+
+      const businessNameBottomStartCoordinates = drawPageMeta({
+        page,
+        fonts,
+        startCoordinates: {
+          x: leftAlignment,
+          y: titleTopAlignment,
+        },
+        label: 'Business Name',
+        value: merchant.name
+      })
+
+      const ownerNameBottomStartCoordinates = drawPageMeta({
+        page,
+        fonts,
+        startCoordinates: businessNameBottomStartCoordinates,
+        label: 'Owner Name',
+        value: merchant.owner
+      })
+
+      page.drawLine({
+        start: {
+          x: businessNameBottomStartCoordinates.x,
+          y: businessNameBottomStartCoordinates.y - getResponsiveDimension(8, page)
+        },
+        end: {
+          x: page.getWidth() - businessNameBottomStartCoordinates.x,
+          y: businessNameBottomStartCoordinates.y - getResponsiveDimension(8, page)
+        },
+        thickness: 0.5,
+        color: COLORS.text,
+      });
+
+      page.drawLine({
+        start: {
+          x: ownerNameBottomStartCoordinates.x,
+          y: ownerNameBottomStartCoordinates.y - getResponsiveDimension(8, page)
+        },
+        end: {
+          x: page.getWidth() - ownerNameBottomStartCoordinates.x,
+          y: ownerNameBottomStartCoordinates.y - getResponsiveDimension(8, page)
+        },
+        thickness: 0.5,
+        color: COLORS.text,
+      });
+
+      const programmeNumberBottomStartCoordinates = drawPageMeta({
+        page,
+        fonts,
+        startCoordinates: {
+          x: leftAlignment + getCardDimensions({page}).width,
+          y: titleTopAlignment,
+        },
+        label: 'Programme Number',
+        value: merchant.Programme.id
+      });
+
+      drawPageMeta({
+        page,
+        fonts,
+        startCoordinates: programmeNumberBottomStartCoordinates,
+        label: 'Owner Name',
+        value: merchant.owner
+      });
+    }
+
     const createNewPage: CreateNewPage = ({
       pdfDoc,
-      currentPageIndex,
-      products,
       fonts
     }) => {
       const page = pdfDoc.addPage();
@@ -222,13 +371,6 @@ export default function App() {
       if (fonts.Helvetica) {
         page.setFont(fonts.Helvetica)
       }
-
-      const totalPages = Math.floor(products.length / ITEMS_PER_PAGE);
-      const itemsInPage =
-        currentPageIndex !== totalPages
-          ? ITEMS_PER_PAGE
-          : products.length % ITEMS_PER_PAGE;
-      drawProductsGrid({ page, itemsInPage });
 
       // page.drawLine({
       //   start: { x: 25, y: page.getHeight() / 2 },
@@ -268,9 +410,20 @@ export default function App() {
           page = createNewPage({
             pdfDoc,
             fonts,
-            currentPageIndex,
-            products
           });
+
+
+          // TODO draw merchant and programme details. To keep this function
+          //  without promises consider keeping only page creation here and
+          //  moving other drawings in another function
+
+          drawProductsGrid({
+            page,
+            currentPageIndex,
+            products,
+          });
+
+          drawPageHeader({page, fonts, merchant})
         }
 
         if (!page) return;

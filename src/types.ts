@@ -20,6 +20,15 @@ export interface Product {
   unitType: string;
 }
 
+export interface Merchant {
+  name: string;
+  owner: string;
+  Programme: {
+    id: string;
+    name: string;
+  }
+}
+
 export type Fonts = Partial<{
   [key in StandardFonts]: PDFFont
 }>
@@ -35,8 +44,6 @@ export interface CreateProductCardProps {
 
 interface CreateNewPageProps {
   pdfDoc: PDFDocument;
-  currentPageIndex: number;
-  products: Product[];
   fonts: Fonts;
 }
 export type CreateNewPage = (props: CreateNewPageProps) => PDFPage;
@@ -48,6 +55,14 @@ export type GetCardDimensions = (props: GetCardDimensionsProps) => Dimensions;
 
 interface DrawProductsGridProps {
   page: PDFPage;
-  itemsInPage: number;
+  currentPageIndex: number;
+  products: Product[];
 }
 export type DrawProductsGrid = (props: DrawProductsGridProps) => void;
+
+interface DrawPageHeaderProps {
+  page: PDFPage;
+  merchant: Merchant;
+  fonts: Fonts;
+}
+export type DrawPageHeader = (props: DrawPageHeaderProps) => void;
