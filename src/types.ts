@@ -66,3 +66,12 @@ interface DrawPageHeaderProps {
   fonts: Fonts;
 }
 export type DrawPageHeader = (props: DrawPageHeaderProps) => void;
+
+interface DrawPageMetaProps {
+  page: PDFPage,
+  fonts: Fonts,
+  startCoordinates: StartCoordinates;
+  label: string;
+  value: string;
+}
+export type DrawPageMeta = (props: DrawPageMetaProps) => StartCoordinates;

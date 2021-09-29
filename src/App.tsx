@@ -6,7 +6,7 @@ import {
   CreateProductCardProps,
   CreateNewPage,
   GetCardDimensions,
-  DrawProductsGrid, Fonts, DrawPageHeader, StartCoordinates
+  DrawProductsGrid, Fonts, DrawPageHeader, StartCoordinates, DrawPageMeta
 } from "./types";
 
 import "./styles.css";
@@ -223,15 +223,6 @@ export default function App() {
       })
     }
 
-    interface DrawPageMetaProps {
-      page: PDFPage,
-      fonts: Fonts,
-      startCoordinates: StartCoordinates;
-      label: string;
-      value: string;
-    }
-    type DrawPageMeta = (props: DrawPageMetaProps) => StartCoordinates;
-
     const drawPageMeta: DrawPageMeta = ({
       page,
       fonts,
@@ -423,7 +414,7 @@ export default function App() {
             products,
           });
 
-          drawPageHeader({page, fonts, merchant})
+          drawPageHeader({ page, fonts, merchant })
         }
 
         if (!page) return;
