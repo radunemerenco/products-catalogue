@@ -6,13 +6,14 @@ import {
   CreateProductCardProps,
   CreateNewPage,
   GetCardDimensions,
-  DrawProductsGrid, Fonts, DrawPageHeader, StartCoordinates, DrawPageMeta
+  DrawProductsGrid, Fonts, DrawPageHeader, StartCoordinates, DrawPageMeta, DrawLogo
 } from "./types";
 
 import "./styles.css";
 import PdfViewer from "./PdfViewer";
 import products from "./resources/products";
 import merchant from "./resources/merchant";
+import {logoImageBase64} from "./resources/images";
 
 const BASE_PAGE_WIDTH = 595;
 const PRODUCT_CARD_WIDTH = 185;
@@ -223,6 +224,25 @@ export default function App() {
       })
     }
 
+    const drawLogo: DrawLogo = async ({
+      pdfDoc,
+      page,
+      // startCoordinates,
+    }) => {
+      const logoPdfImage = await pdfDoc.embedPng(logoImageBase64);
+      const logoWidth = getResponsiveDimension(116, page);
+      const logoHeight = getResponsiveDimension(32, page);
+      const rightAlignment = getResponsiveDimension(PAGE_PADDING.RIGHT, page);
+      const topAlignment = getResponsiveDimension(PAGE_PADDING.TOP, page);
+
+      page.drawImage(logoPdfImage, {
+        x: page.getWidth() - rightAlignment - logoWidth,
+        y: page.getHeight() - topAlignment - logoHeight,
+        width: logoWidth,
+        height: logoHeight
+      });
+    }
+
     const drawPageMeta: DrawPageMeta = ({
       page,
       fonts,
@@ -264,7 +284,8 @@ export default function App() {
       return valueBottomStartCoordinates;
     }
 
-    const drawPageHeader: DrawPageHeader = ({
+    const drawPageHeader: DrawPageHeader = async ({
+      pdfDoc,
       page,
       merchant,
       fonts,
@@ -285,6 +306,8 @@ export default function App() {
         color: COLORS.accent,
         lineHeight: titleLineHeight
       });
+
+      await drawLogo({ pdfDoc, page });
 
       const businessNameBottomStartCoordinates = drawPageMeta({
         page,
@@ -346,8 +369,8 @@ export default function App() {
         page,
         fonts,
         startCoordinates: programmeNumberBottomStartCoordinates,
-        label: 'Owner Name',
-        value: merchant.owner
+        label: 'Programme Name',
+        value: merchant.Programme.name
       });
     }
 
@@ -414,7 +437,7 @@ export default function App() {
             products,
           });
 
-          drawPageHeader({ page, fonts, merchant })
+          drawPageHeader({ pdfDoc, page, fonts, merchant })
         }
 
         if (!page) return;

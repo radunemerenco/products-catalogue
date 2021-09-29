@@ -61,11 +61,12 @@ interface DrawProductsGridProps {
 export type DrawProductsGrid = (props: DrawProductsGridProps) => void;
 
 interface DrawPageHeaderProps {
+  pdfDoc: PDFDocument;
   page: PDFPage;
   merchant: Merchant;
   fonts: Fonts;
 }
-export type DrawPageHeader = (props: DrawPageHeaderProps) => void;
+export type DrawPageHeader = (props: DrawPageHeaderProps) => Promise<void>;
 
 interface DrawPageMetaProps {
   page: PDFPage,
@@ -75,3 +76,9 @@ interface DrawPageMetaProps {
   value: string;
 }
 export type DrawPageMeta = (props: DrawPageMetaProps) => StartCoordinates;
+
+interface DrawLogoProps {
+  pdfDoc: PDFDocument,
+  page: PDFPage,
+}
+export type DrawLogo = (props: DrawLogoProps) => Promise<void>;
